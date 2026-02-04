@@ -2,41 +2,107 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kitty.am - Hair Up</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kitty.am - Private Pride</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --gold: #D4AF37; --dark-bg: #050505; --card-bg: #111; --nav-bg: #000; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
         
-        .phone-mockup { width: 360px; height: 740px; background-color: #000; border: 8px solid #222; border-radius: 40px; position: relative; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.8); }
+        * { box-sizing: border-box; }
+
+        body { 
+            background-color: var(--dark-bg); 
+            color: white; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
         
-        header { padding: 20px; text-align: center; border-bottom: 1px solid #1a1a1a; background: #000; letter-spacing: 4px; color: var(--gold); font-weight: bold; }
+        .phone-mockup { 
+            width: 100%; 
+            max-width: 500px; 
+            height: 100%; 
+            background-color: #000; 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        /* Для больших экранов делаем вид телефона */
+        @media (min-width: 500px) {
+            body { padding: 20px; }
+            .phone-mockup { 
+                height: 800px; 
+                border: 8px solid #222; 
+                border-radius: 40px; 
+                box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+            }
+        }
         
-        .main-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; scrollbar-width: none; }
+        header { 
+            padding: 15px; 
+            text-align: center; 
+            border-bottom: 1px solid #1a1a1a; 
+            background: #000; 
+            letter-spacing: 5px; 
+            color: var(--gold); 
+            font-weight: bold;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .main-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+            padding-bottom: 90px; /* Отступ под навигацию */
+            scrollbar-width: none; 
+        }
         .main-content::-webkit-scrollbar { display: none; }
 
         /* Промо блок Hair Up */
-        .hair-up-card { background: linear-gradient(145deg, #1a1a1a, #000); border: 1px solid var(--gold); border-radius: 20px; padding: 20px; margin-bottom: 20px; text-align: center; }
-        .hair-up-card h2 { margin: 0; font-size: 28px; background: linear-gradient(to right, #D4AF37, #FFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hair-up-card { 
+            background: linear-gradient(145deg, #1a1a1a, #000); 
+            border: 1px solid var(--gold); 
+            border-radius: 20px; 
+            padding: 25px 15px; 
+            margin-bottom: 25px; 
+            text-align: center;
+        }
+        .hair-up-card h2 { margin: 0; font-size: 32px; font-weight: 900; color: var(--gold); }
+        .hair-up-card p { color: #888; font-size: 13px; margin: 10px 0 20px; }
 
         /* Посты */
         .post-card { background: var(--card-bg); border-radius: 15px; overflow: hidden; margin-bottom: 20px; border: 1px solid #222; }
         .post-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
         .post-info { padding: 12px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* Навигация */
-        nav { position: absolute; bottom: 0; width: 100%; height: 70px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #1a1a1a; }
-        .nav-item { color: #555; cursor: pointer; text-align: center; font-size: 10px; transition: 0.3s; }
-        .nav-item.active { color: var(--gold); transform: translateY(-3px); }
-        .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+        /* Навигация — ВСЕГДА ВНИЗУ */
+        nav { 
+            position: absolute; 
+            bottom: 0; 
+            width: 100%; 
+            height: 75px; 
+            background: var(--nav-bg); 
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center; 
+            border-top: 1px solid #1a1a1a;
+            padding-bottom: env(safe-area-inset-bottom); /* Поддержка iPhone с челкой снизу */
+        }
+        .nav-item { color: #555; cursor: pointer; text-align: center; font-size: 10px; transition: 0.2s; flex: 1; }
+        .nav-item.active { color: var(--gold); }
+        .nav-icon { font-size: 22px; display: block; margin-bottom: 4px; }
 
         /* Кнопки и формы */
-        .auth-form { display: flex; flex-direction: column; gap: 12px; padding-top: 50px; }
-        .input-style { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; outline: none; }
-        .btn-gold { background: var(--gold); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-gold { background: var(--gold); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; }
+        .input-style { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; outline: none; margin-bottom: 10px; width: 100%; }
         
-        .notification { position: absolute; top: 20px; width: 80%; left: 10%; background: var(--gold); color: #000; padding: 10px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: bold; z-index: 1000; display: none; }
+        .notification { position: absolute; top: 20px; width: 90%; left: 5%; background: var(--gold); color: #000; padding: 12px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: bold; z-index: 2000; display: none; }
     </style>
 </head>
 <body>
@@ -48,7 +114,7 @@
     <div class="main-content" id="screen-content">
         </div>
 
-    <nav>
+    <nav id="bottom-nav">
         <div class="nav-item active" onclick="showScreen('feed')"><span class="nav-icon">✨</span>ПРАЙД</div>
         <div class="nav-item" onclick="showScreen('profile')"><span class="nav-icon">🐱</span>ПРОФИЛЬ</div>
         <div class="nav-item" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span>ОПЦИИ</div>
@@ -61,9 +127,7 @@
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
     let currentUser = null;
-    let postsData = [];
 
-    // Инициализация
     async function init() {
         const { data } = await supabaseClient.auth.getSession();
         currentUser = data.session?.user || null;
@@ -73,43 +137,45 @@
     const screens = {
         feed: async () => {
             const { data } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
-            postsData = data || [];
+            let posts = data || [];
             
             let html = `
                 <div class="hair-up-card">
                     <h2>HAIR UP</h2>
-                    <p style="color: #888; font-size: 12px;">Վարսերը վեր։ Քո անմոռանալի ֆոտոսեթը</p>
-                    <button class="btn-gold" style="width: auto; padding: 5px 15px;" onclick="notify('Скоро открытие записи!')">УЗНАТЬ БОЛЬШЕ</button>
+                    <p>Վարսերը վեր։ Քո անմոռանալի ֆոտոսեթը</p>
+                    <button class="btn-gold" style="width: auto; padding: 8px 25px;" onclick="notify('Скоро открытие записи!')">УЗНАТЬ БОЛЬШЕ</button>
                 </div>
             `;
             
-            html += postsData.map(post => `
+            html += posts.length ? posts.map(p => `
                 <div class="post-card">
-                    <div style="padding: 10px; font-size: 11px; color: #555;">@${post.author || 'kitty_user'}</div>
-                    <img src="${post.image_url}" onerror="this.src='https://via.placeholder.com/300?text=No+Image'">
+                    <div style="padding: 10px; font-size: 11px; color: #555;">@${p.author || 'anonymous'}</div>
+                    <img src="${p.image_url}" loading="lazy">
                     <div class="post-info">
-                        <span onclick="notify('Мур!')" style="cursor:pointer">🐾 ${post.likes || 0}</span>
+                        <span onclick="notify('Мяу!')" style="cursor:pointer">🐾 ${p.likes || 0}</span>
                     </div>
                 </div>
-            `).join('');
+            `).join('') : '<p style="text-align:center; color:#444;">Лента пуста...</p>';
             return html;
         },
         profile: () => {
-            if (!currentUser) return renderAuthForm();
+            if (!currentUser) return renderAuth();
             return `
                 <div style="text-align:center; padding-top:40px;">
-                    <div style="font-size:60px;">🐱</div>
-                    <h3>Ваш профиль</h3>
-                    <p style="color:#555">${currentUser.email}</p>
-                    <button class="btn-gold" onclick="notify('Загрузка скоро заработает')">+ НОВЫЙ ПОСТ</button>
+                    <div style="font-size:60px; margin-bottom:10px;">🐱</div>
+                    <h3>Ваш аккаунт</h3>
+                    <p style="color:#666; font-size:14px;">${currentUser.email}</p>
+                    <div style="padding: 20px;">
+                        <button class="btn-gold" onclick="notify('Функция загрузки в разработке')">+ НОВЫЙ ПОСТ</button>
+                    </div>
                 </div>
             `;
         },
         settings: () => {
-            if (!currentUser) return `<p style="text-align:center; padding-top:100px; color:#555;">Войдите, чтобы менять настройки</p>`;
+            if (!currentUser) return '<p style="text-align:center; padding-top:100px; color:#444;">Войдите в профиль</p>';
             return `
-                <div style="padding: 20px; text-align:center;">
-                    <button class="btn-gold" style="background:#441111; color:white;" onclick="logout()">ВЫЙТИ</button>
+                <div style="padding: 20px;">
+                    <button class="btn-gold" style="background:#441111; color:white;" onclick="logout()">ВЫЙТИ ИЗ СИСТЕМЫ</button>
                 </div>
             `;
         }
@@ -117,41 +183,40 @@
 
     async function showScreen(name) {
         const content = document.getElementById('screen-content');
-        content.innerHTML = '<p style="text-align:center; padding-top:100px; color:var(--gold);">Мурлычем...</p>';
+        content.innerHTML = '<p style="text-align:center; padding-top:100px; color:var(--gold);">Загрузка...</p>';
         
-        // Обновляем иконки меню
         document.querySelectorAll('.nav-item').forEach((item, idx) => {
-            item.classList.toggle('active', (name === 'feed' && idx === 0) || (name === 'profile' && idx === 1) || (name === 'settings' && idx === 2));
+            const tabs = ['feed', 'profile', 'settings'];
+            item.classList.toggle('active', name === tabs[idx]);
         });
 
-        const html = await screens[name]();
-        content.innerHTML = html;
+        content.innerHTML = await screens[name]();
     }
 
-    function renderAuthForm() {
+    function renderAuth() {
         return `
-            <div class="auth-form">
+            <div style="padding-top:40px;">
                 <h3 style="text-align:center; color:var(--gold);">Вход в Прайд</h3>
-                <input type="email" id="auth-email" class="input-style" placeholder="Email">
-                <input type="password" id="auth-pass" class="input-style" placeholder="Пароль">
+                <input type="email" id="email" class="input-style" placeholder="Email">
+                <input type="password" id="pass" class="input-style" placeholder="Пароль">
                 <button class="btn-gold" onclick="login()">ВОЙТИ</button>
-                <button style="background:none; border:none; color:#555; font-size:11px;" onclick="register()">Создать аккаунт</button>
+                <p style="text-align:center; font-size:11px; color:#555; margin-top:15px;" onclick="register()">Нет аккаунта? Зарегистрироваться</p>
             </div>
         `;
     }
 
     async function login() {
-        const email = document.getElementById('auth-email').value;
-        const password = document.getElementById('auth-pass').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('pass').value;
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) alert(error.message); else location.reload();
     }
 
     async function register() {
-        const email = document.getElementById('auth-email').value;
-        const password = document.getElementById('auth-pass').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('pass').value;
         const { error } = await supabaseClient.auth.signUp({ email, password });
-        if (error) alert("Проверьте почту для подтверждения!"); else alert("Успех!");
+        if (error) alert(error.message); else alert("Проверьте почту для подтверждения!");
     }
 
     async function logout() {
