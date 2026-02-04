@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kitty.am - V3</title>
+    <title>Kitty.am - V4</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --gold: #D4AF37; --dark-bg: #050505; --card-bg: #111; }
@@ -37,6 +37,7 @@
             font-weight: bold;
             font-size: 20px;
             letter-spacing: 3px;
+            flex-shrink: 0;
         }
 
         /* НАВИГАЦИЯ СВЕРХУ */
@@ -46,6 +47,7 @@
             background: #0a0a0a; 
             border-bottom: 1px solid #222;
             padding: 10px 0;
+            flex-shrink: 0;
         }
         .nav-item { color: #555; cursor: pointer; text-align: center; font-size: 11px; flex: 1; text-transform: uppercase; }
         .nav-item.active { color: var(--gold); font-weight: bold; }
@@ -57,6 +59,7 @@
             padding: 15px;
             scrollbar-width: none; 
         }
+        .main-content::-webkit-scrollbar { display: none; }
 
         /* Блок Hair Up */
         .hair-up-card { 
@@ -64,94 +67,22 @@
             border: 1px solid var(--gold); 
             border-radius: 15px; 
             padding: 20px; 
-            margin-bottom: 20px; 
+            margin-bottom: 25px; 
             text-align: center;
         }
-        .hair-up-card h2 { margin: 0; color: var(--gold); font-size: 26px; }
+        .hair-up-card h2 { margin: 0; color: var(--gold); font-size: 26px; font-weight: 900; }
         .btn-gold { background: var(--gold); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
 
-        /* Посты */
-        .post-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid #222; }
-        .post-card img { width: 100%; aspect-ratio: 1; object-fit: cover; }
-        
-        .notification { position: fixed; top: 20px; width: 90%; left: 5%; background: var(--gold); color: #000; padding: 12px; border-radius: 10px; text-align: center; z-index: 9999; display: none; }
-    </style>
-</head>
-<body>
+        /* КАРТОЧКА ПОСТА */
+        .post-card { 
+            background: var(--card-bg); 
+            border-radius: 15px; 
+            overflow: hidden; 
+            margin-bottom: 30px; 
+            border: 1px solid #222;
+            display: flex;
+            flex-direction: column;
+        }
 
-<div class="app-container">
-    <div id="toast" class="notification"></div>
-    <header>KITTY.AM V3</header>
-    
-    <nav>
-        <div class="nav-item active" onclick="showScreen('feed')"><span class="nav-icon">✨</span>Лента</div>
-        <div class="nav-item" onclick="showScreen('profile')"><span class="nav-icon">🐱</span>Профиль</div>
-        <div class="nav-item" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span>Опции</div>
-    </nav>
-
-    <div class="main-content" id="screen-content">
-        </div>
-</div>
-
-<script>
-    const SB_URL = 'https://jfvpauofczfliqjpupfp.supabase.co';
-    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmdnBhdW9mY3pmbGlxanB1cGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQ2MTYsImV4cCI6MjA4NDM0MDYxNn0.1CrMZ4YtxOoAjvEgMg8ffQdl7xldmDkKAFLnukaO6nE';
-    const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-
-    let currentUser = null;
-
-    async function init() {
-        const { data } = await supabaseClient.auth.getSession();
-        currentUser = data.session?.user || null;
-        showScreen('feed');
-    }
-
-    const screens = {
-        feed: async () => {
-            const { data } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
-            let posts = data || [];
-            let html = `
-                <div class="hair-up-card">
-                    <h2>HAIR UP</h2>
-                    <p style="color:#888; font-size:12px;">Վարսերը վեր։ Քո անմոռանալի ֆոտոսեթը</p>
-                    <button class="btn-gold" onclick="notify('Запись скоро откроется!')">УЗНАТЬ БОЛЬШЕ</button>
-                </div>
-            `;
-            html += posts.map(p => `
-                <div class="post-card">
-                    <img src="${p.image_url}">
-                    <div style="padding:10px;">🐾 ${p.likes || 0}</div>
-                </div>
-            `).join('');
-            return html;
-        },
-        profile: () => {
-            if (!currentUser) return `
-                <div style="padding:20px; text-align:center;">
-                    <p>Войдите, чтобы увидеть профиль</p>
-                    <button class="btn-gold" onclick="location.reload()">ОБНОВИТЬ</button>
-                </div>`;
-            return `<div style="padding:20px; text-align:center;"><h3>${currentUser.email}</h3></div>`;
-        },
-        settings: () => `<div style="padding:20px;"><button class="btn-gold" onclick="supabaseClient.auth.signOut().then(()=>location.reload())">ВЫЙТИ</button></div>`
-    };
-
-    async function showScreen(name) {
-        const content = document.getElementById('screen-content');
-        document.querySelectorAll('.nav-item').forEach((item, idx) => {
-            const tabs = ['feed', 'profile', 'settings'];
-            item.classList.toggle('active', name === tabs[idx]);
-        });
-        content.innerHTML = await screens[name]();
-    }
-
-    function notify(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.display = 'block';
-        setTimeout(() => t.style.display = 'none', 2500);
-    }
-
-    init();
-</script>
-</body>
-</html>
+        .post-card img { 
+            width:
