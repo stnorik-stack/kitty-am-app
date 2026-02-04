@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitty.am - Private Pride</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --gold: #D4AF37; --dark-bg: #1a1a1a; --phone-border: #333; --nav-bg: #080808; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        
+        .phone-mockup { width: 360px; height: 740px; background-color: #000; border: 12px solid var(--phone-border); border-radius: 45px; position: relative; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.6); }
+        
+        header { padding: 15px; text-align: center; border-bottom: 1px solid #222; background: #000; z-index: 10; }
+        .logo-text { color: var(--gold); font-weight: bold; letter-spacing: 5px; font-size: 20px; }
+        
+        .main-content { flex: 1; overflow-y: auto; padding-bottom: 80px; position: relative; scrollbar-width: none; }
+        
+        /* Авторизация */
+        .auth-container { padding: 40px 25px; text-align: center; display: flex; flex-direction: column; gap: 15px; }
+        .auth-logo { font-size: 60px; margin-bottom: 10px; }
+        
+        /* Кнопки и инпуты */
+        .edit-input { background: #111; border: 1px solid #333; color: white; padding: 12px; border-radius: 15px; width: 100%; box-sizing: border-box; outline: none; transition: 0.3s; }
+        .edit-input:focus { border-color: var(--gold); }
+        .btn-gold { background: var(--gold); border: none; padding: 15px; border-radius: 25px; width: 100%; font-weight: bold; cursor: pointer; color: black; transition: 0.2s; }
+        .btn-gold:active { transform: scale(0.98); }
+        
+        /* Навигация */
+        nav { position: absolute; bottom: 0; width: 100%; height: 65px; background-color: var(--nav-bg); display: none; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 100; }
+        .nav-item { color: #666; cursor: pointer; text-align: center; font-size: 9px; text-transform: uppercase; flex: 1; }
+        .nav-item.active { color: var(--gold); }
+        .nav-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+
+        /* Посты */
+        .post-card { margin-bottom: 25px; background: #0a0a0a; border-radius: 20px; overflow: hidden; border: 1px solid #222; animation: fadeIn 0.4s; }
+        .post-card img { width: 100%; aspect-ratio: 1; object-fit: cover; background: #111; }
+        .post-meta { padding: 12px; display: flex; align-items: center; justify-content: space-between; }
+        
+        .notification { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 10px 20px; border-radius: 20px; font-size: 11px; font-weight: bold; transition: 0.5s; z-index: 2000; }
+        .notification.show { top: 70px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="phone-mockup">
+    <div id="notification-toast" class="notification"></div>
+    <header><div class="logo-text">KITTY.AM</div></header>
+    
+    <div class="main-content" id="app-content">
+        <div style="padding: 50px; text-align: center;">Мурлычем...</div>
+    </div>
+
+    <nav id="app-nav">
+        <div class="nav-item active" id="tab-feed" onclick="changeTab('feed')"><span class="nav-icon">✨</span>Прайд</div>
+        <div class="nav-item" id="tab-profile" onclick="changeTab('profile')"><span class="nav-icon">🐱</span>Профиль</div>
+        <div class="nav-item" id="tab-settings" onclick="changeTab('settings')"><span class="nav-icon">⚙️</span>Опции</div>
+    </nav>
+</div>
+
+<script>
+    // --- КОНФИГУРАЦИЯ ---
+    const SB_URL = 'https://jfvpauofczfliqjpupfp.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmdnBhdW9mY3pmbGlxanB1cGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQ2MTYsImV4cCI6MjA4NDM0MDYxNn0.1CrMZ4YtxOoAjvEgMg8ffQdl7xldmDkKAFLnukaO6nE';
+    const client = supabase.createClient(SB_URL, SB_KEY);
+
+    let state = {
+        user: null,
+        profile: JSON.parse(localStorage.getItem('kitty_user_data')) || { name: 'Котик', bio: 'грация и стиль' },
+        currentTab: 'feed',
+        posts: []
+    };
+
+    // --- СИСТЕМА AUTH ---
+    async function checkSession() {
+        const { data: { session } } = await client.auth.getSession();
+        state.user = session ? session.user : null;
+        
+        if (state.user) {
+            document.getElementById('app-nav').style.display = 'flex';
+            changeTab('feed');
+        } else {
+            document.getElementById('app-nav').style.display = 'none';
+            renderAuth();
+        }
+    }
+
+    async function handleAuth(type) {
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('pass').value;
+        
+        if(!email || !pass) return showNotify('Заполни все поля!');
+
+        showNotify('Мяукаем на сервер...');
+        const { data, error } = (type === 'login') 
+            ? await client.auth.signInWithPassword({ email, password: pass })
+            : await client.auth.signUp({ email, password: pass });
+
+        if (error) {
+            alert(error.message);
+        } else {
+            if(type === 'signup') showNotify('Аккаунт создан! Теперь войди.');
+            else checkSession();
+        }
+    }
+
+    async function signOut() {
+        await client.auth.signOut();
+        checkSession();
+    }
+
+    // --- РАБОТА С ПОСТАМИ ---
+    async function loadPosts() {
+        const { data, error } = await client.from('posts').select('*').order('created_at', { ascending: false });
+        if (!error) {
+            state.posts = data;
+            if(state.currentTab === 'feed') render();
+        }
+    }
+
+    async function uploadPhoto(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        showNotify('Сжимаем фото...');
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = async () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const max = 800;
+                let w = img.width, h = img.height;
+                if (w > max) { h *= max / w; w = max; }
+                canvas.width = w; canvas.height = h;
+                ctx.drawImage(img, 0, 0, w, h);
+                
+                const base64 = canvas.toDataURL('image/jpeg', 0.7);
+                
+                const { error } = await client.from('posts').insert([{ 
+                    author: state.profile.name, 
+                    image_url: base64,
+                    likes: 0,
+                    user_id: state.user.id
+                }]);
+
+                if (error) alert(error.message);
+                else { showNotify('Опубликовано!'); loadPosts(); }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function likePost(id, curLikes) {
+        await client.from('posts').update({ likes: (curLikes || 0) + 1 }).eq('id', id);
+        loadPosts();
+    }
+
+    // --- РЕНДЕРЕРЫ ---
+    function renderAuth() {
+        document.getElementById('app-content').innerHTML = `
+            <div class="auth-container">
+                <div class="auth-logo">🐱</div>
+                <h2 style="color:var(--gold); margin-bottom:5px;">Добро пожаловать</h2>
+                <p style="font-size:12px; color:#666; margin-bottom:20px;">Войди в свой прайд</p>
+                <input type="email" id="email" class="edit-input" placeholder="Email">
+                <input type="password" id="pass" class="edit-input" placeholder="Пароль">
+                <button class="btn-gold" onclick="handleAuth('login')">ВОЙТИ</button>
+                <button style="background:none; border:none; color:#666; font-size:12px; cursor:pointer;" onclick="handleAuth('signup')">Еще нет аккаунта? Создать</button>
+            </div>
+        `;
+    }
+
+    const renderers = {
+        feed: () => `
+            <div style="padding: 15px;">
+                ${state.posts.map(p => `
+                    <div class="post-card">
+                        <div style="padding: 10px; font-size: 12px; color: #666;">@${p.author}</div>
+                        <img src="${p.image_url}" ondblclick="likePost('${p.id}', ${p.likes})">
+                        <div class="post-meta">
+                            <div onclick="likePost('${p.id}', ${p.likes})" style="cursor:pointer; font-size:18px;">
+                                🐾 <span style="color:var(--gold)">${p.likes || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `,
+        profile: () => `
+            <div class="profile-section" style="padding: 30px 20px; text-align: center;">
+                <div style="width:80px; height:80px; background:var(--gold); border-radius:50%; margin:0 auto 20px; font-size:40px; display:flex; align-items:center; justify-content:center;">🐱</div>
+                <input id="p-name" class="edit-input" value="${state.profile.name}" style="text-align:center; margin-bottom:10px;">
+                <input id="p-bio" class="edit-input" value="${state.profile.bio}" style="text-align:center; font-size:12px; color:#666;">
+                <button class="btn-gold" style="margin-top:20px;" onclick="saveProfile()">СОХРАНИТЬ</button>
+                <hr style="border:0; border-top:1px solid #222; margin:30px 0;">
+                <input type="file" id="f-in" hidden onchange="uploadPhoto(event)">
+                <button class="btn-gold" style="background:white;" onclick="document.getElementById('f-in').click()">+ НОВЫЙ ПОСТ</button>
+            </div>
+        `,
+        settings: () => `
+            <div style="padding: 30px 20px; text-align: center;">
+                <h3 style="color:var(--gold)">Настройки</h3>
+                <p style="font-size:12px; color:#444; margin-bottom:30px;">Вы вошли как: ${state.user.email}</p>
+                <button class="btn-gold" style="background:#b33939; color:white;" onclick="signOut()">ВЫЙТИ ИЗ АККАУНТА</button>
+            </div>
+        `
+    };
+
+    function changeTab(tab) {
+        state.currentTab = tab;
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        render();
+        if(tab === 'feed') loadPosts();
+    }
+
+    function render() {
+        document.getElementById('app-content').innerHTML = renderers[state.currentTab]();
+    }
+
+    function saveProfile() {
+        state.profile.name = document.getElementById('p-name').value;
+        state.profile.bio = document.getElementById('p-bio').value;
+        localStorage.setItem('kitty_user_data', JSON.stringify(state.profile));
+        showNotify('Профиль сохранен');
+    }
+
+    function showNotify(m) {
+        const t = document.getElementById('notification-toast');
+        t.textContent = m; t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    checkSession();
+    setInterval(loadPosts, 10000);
+</script>
+</body>
+</html>
