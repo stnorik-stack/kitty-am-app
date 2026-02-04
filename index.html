@@ -3,122 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kitty.am - Private Pride</title>
+    <title>Kitty.am - V3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --gold: #D4AF37; --dark-bg: #050505; --card-bg: #111; --nav-bg: #000; }
-        
+        :root { --gold: #D4AF37; --dark-bg: #050505; --card-bg: #111; }
         * { box-sizing: border-box; }
 
         body { 
             background-color: var(--dark-bg); 
             color: white; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            font-family: -apple-system, system-ui, sans-serif; 
             margin: 0; 
             display: flex; 
             justify-content: center; 
             height: 100vh;
-            width: 100vw;
             overflow: hidden;
         }
         
-        .phone-mockup { 
+        .app-container { 
             width: 100%; 
             max-width: 500px; 
             height: 100%; 
             background-color: #000; 
-            position: relative; 
             display: flex; 
             flex-direction: column; 
         }
 
-        /* Для больших экранов делаем вид телефона */
-        @media (min-width: 500px) {
-            body { padding: 20px; }
-            .phone-mockup { 
-                height: 800px; 
-                border: 8px solid #222; 
-                border-radius: 40px; 
-                box-shadow: 0 25px 50px rgba(0,0,0,0.8);
-            }
-        }
-        
         header { 
             padding: 15px; 
             text-align: center; 
-            border-bottom: 1px solid #1a1a1a; 
             background: #000; 
-            letter-spacing: 5px; 
             color: var(--gold); 
             font-weight: bold;
-            font-size: 18px;
-            flex-shrink: 0;
+            font-size: 20px;
+            letter-spacing: 3px;
         }
-        
+
+        /* НАВИГАЦИЯ СВЕРХУ */
+        nav { 
+            display: flex; 
+            justify-content: space-around; 
+            background: #0a0a0a; 
+            border-bottom: 1px solid #222;
+            padding: 10px 0;
+        }
+        .nav-item { color: #555; cursor: pointer; text-align: center; font-size: 11px; flex: 1; text-transform: uppercase; }
+        .nav-item.active { color: var(--gold); font-weight: bold; }
+        .nav-icon { display: block; font-size: 18px; margin-bottom: 2px; }
+
         .main-content { 
             flex: 1; 
             overflow-y: auto; 
-            padding: 15px; 
-            padding-bottom: 90px; /* Отступ под навигацию */
+            padding: 15px;
             scrollbar-width: none; 
         }
-        .main-content::-webkit-scrollbar { display: none; }
 
-        /* Промо блок Hair Up */
+        /* Блок Hair Up */
         .hair-up-card { 
-            background: linear-gradient(145deg, #1a1a1a, #000); 
+            background: linear-gradient(135deg, #111, #000); 
             border: 1px solid var(--gold); 
-            border-radius: 20px; 
-            padding: 25px 15px; 
-            margin-bottom: 25px; 
+            border-radius: 15px; 
+            padding: 20px; 
+            margin-bottom: 20px; 
             text-align: center;
         }
-        .hair-up-card h2 { margin: 0; font-size: 32px; font-weight: 900; color: var(--gold); }
-        .hair-up-card p { color: #888; font-size: 13px; margin: 10px 0 20px; }
+        .hair-up-card h2 { margin: 0; color: var(--gold); font-size: 26px; }
+        .btn-gold { background: var(--gold); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
 
         /* Посты */
-        .post-card { background: var(--card-bg); border-radius: 15px; overflow: hidden; margin-bottom: 20px; border: 1px solid #222; }
-        .post-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
-        .post-info { padding: 12px; display: flex; justify-content: space-between; align-items: center; }
-
-        /* Навигация — ВСЕГДА ВНИЗУ */
-        nav { 
-            position: absolute; 
-            bottom: 0; 
-            width: 100%; 
-            height: 75px; 
-            background: var(--nav-bg); 
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center; 
-            border-top: 1px solid #1a1a1a;
-            padding-bottom: env(safe-area-inset-bottom); /* Поддержка iPhone с челкой снизу */
-        }
-        .nav-item { color: #555; cursor: pointer; text-align: center; font-size: 10px; transition: 0.2s; flex: 1; }
-        .nav-item.active { color: var(--gold); }
-        .nav-icon { font-size: 22px; display: block; margin-bottom: 4px; }
-
-        /* Кнопки и формы */
-        .btn-gold { background: var(--gold); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; }
-        .input-style { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; outline: none; margin-bottom: 10px; width: 100%; }
+        .post-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid #222; }
+        .post-card img { width: 100%; aspect-ratio: 1; object-fit: cover; }
         
-        .notification { position: absolute; top: 20px; width: 90%; left: 5%; background: var(--gold); color: #000; padding: 12px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: bold; z-index: 2000; display: none; }
+        .notification { position: fixed; top: 20px; width: 90%; left: 5%; background: var(--gold); color: #000; padding: 12px; border-radius: 10px; text-align: center; z-index: 9999; display: none; }
     </style>
 </head>
 <body>
 
-<div class="phone-mockup">
+<div class="app-container">
     <div id="toast" class="notification"></div>
-    <header>KITTY.AM V2</header>
+    <header>KITTY.AM V3</header>
     
+    <nav>
+        <div class="nav-item active" onclick="showScreen('feed')"><span class="nav-icon">✨</span>Лента</div>
+        <div class="nav-item" onclick="showScreen('profile')"><span class="nav-icon">🐱</span>Профиль</div>
+        <div class="nav-item" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span>Опции</div>
+    </nav>
+
     <div class="main-content" id="screen-content">
         </div>
-
-    <nav id="bottom-nav">
-        <div class="nav-item active" onclick="showScreen('feed')"><span class="nav-icon">✨</span>ПРАЙД</div>
-        <div class="nav-item" onclick="showScreen('profile')"><span class="nav-icon">🐱</span>ПРОФИЛЬ</div>
-        <div class="nav-item" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span>ОПЦИИ</div>
-    </nav>
 </div>
 
 <script>
@@ -138,101 +110,48 @@
         feed: async () => {
             const { data } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
             let posts = data || [];
-            
             let html = `
                 <div class="hair-up-card">
                     <h2>HAIR UP</h2>
-                    <p>Վարսերը վեր։ Քո անմոռանալի ֆոտոսեթը</p>
-                    <button class="btn-gold" style="width: auto; padding: 8px 25px;" onclick="notify('Скоро открытие записи!')">УЗНАТЬ БОЛЬШЕ</button>
+                    <p style="color:#888; font-size:12px;">Վարսերը վեր։ Քո անմոռանալի ֆոտոսեթը</p>
+                    <button class="btn-gold" onclick="notify('Запись скоро откроется!')">УЗНАТЬ БОЛЬШЕ</button>
                 </div>
             `;
-            
-            html += posts.length ? posts.map(p => `
+            html += posts.map(p => `
                 <div class="post-card">
-                    <div style="padding: 10px; font-size: 11px; color: #555;">@${p.author || 'anonymous'}</div>
-                    <img src="${p.image_url}" loading="lazy">
-                    <div class="post-info">
-                        <span onclick="notify('Мяу!')" style="cursor:pointer">🐾 ${p.likes || 0}</span>
-                    </div>
+                    <img src="${p.image_url}">
+                    <div style="padding:10px;">🐾 ${p.likes || 0}</div>
                 </div>
-            `).join('') : '<p style="text-align:center; color:#444;">Лента пуста...</p>';
+            `).join('');
             return html;
         },
         profile: () => {
-            if (!currentUser) return renderAuth();
-            return `
-                <div style="text-align:center; padding-top:40px;">
-                    <div style="font-size:60px; margin-bottom:10px;">🐱</div>
-                    <h3>Ваш аккаунт</h3>
-                    <p style="color:#666; font-size:14px;">${currentUser.email}</p>
-                    <div style="padding: 20px;">
-                        <button class="btn-gold" onclick="notify('Функция загрузки в разработке')">+ НОВЫЙ ПОСТ</button>
-                    </div>
-                </div>
-            `;
+            if (!currentUser) return `
+                <div style="padding:20px; text-align:center;">
+                    <p>Войдите, чтобы увидеть профиль</p>
+                    <button class="btn-gold" onclick="location.reload()">ОБНОВИТЬ</button>
+                </div>`;
+            return `<div style="padding:20px; text-align:center;"><h3>${currentUser.email}</h3></div>`;
         },
-        settings: () => {
-            if (!currentUser) return '<p style="text-align:center; padding-top:100px; color:#444;">Войдите в профиль</p>';
-            return `
-                <div style="padding: 20px;">
-                    <button class="btn-gold" style="background:#441111; color:white;" onclick="logout()">ВЫЙТИ ИЗ СИСТЕМЫ</button>
-                </div>
-            `;
-        }
+        settings: () => `<div style="padding:20px;"><button class="btn-gold" onclick="supabaseClient.auth.signOut().then(()=>location.reload())">ВЫЙТИ</button></div>`
     };
 
     async function showScreen(name) {
         const content = document.getElementById('screen-content');
-        content.innerHTML = '<p style="text-align:center; padding-top:100px; color:var(--gold);">Загрузка...</p>';
-        
         document.querySelectorAll('.nav-item').forEach((item, idx) => {
             const tabs = ['feed', 'profile', 'settings'];
             item.classList.toggle('active', name === tabs[idx]);
         });
-
         content.innerHTML = await screens[name]();
-    }
-
-    function renderAuth() {
-        return `
-            <div style="padding-top:40px;">
-                <h3 style="text-align:center; color:var(--gold);">Вход в Прайд</h3>
-                <input type="email" id="email" class="input-style" placeholder="Email">
-                <input type="password" id="pass" class="input-style" placeholder="Пароль">
-                <button class="btn-gold" onclick="login()">ВОЙТИ</button>
-                <p style="text-align:center; font-size:11px; color:#555; margin-top:15px;" onclick="register()">Нет аккаунта? Зарегистрироваться</p>
-            </div>
-        `;
-    }
-
-    async function login() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('pass').value;
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) alert(error.message); else location.reload();
-    }
-
-    async function register() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('pass').value;
-        const { error } = await supabaseClient.auth.signUp({ email, password });
-        if (error) alert(error.message); else alert("Проверьте почту для подтверждения!");
-    }
-
-    async function logout() {
-        await supabaseClient.auth.signOut();
-        location.reload();
     }
 
     function notify(msg) {
         const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.style.display = 'block';
+        t.innerText = msg; t.style.display = 'block';
         setTimeout(() => t.style.display = 'none', 2500);
     }
 
     init();
 </script>
-
 </body>
 </html>
