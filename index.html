@@ -1,64 +1,141 @@
-const SB_URL = 'https://jfvpauofczfliqjpupfp.supabase.co';
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kitty.am - Your Inner Cat</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --gold: #D4AF37; --bg: #050505; --card: #111; --text: #fff; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: -apple-system, system-ui, sans-serif; 
+            margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; 
+        }
+        
+        .app { width: 100%; max-width: 500px; display: flex; flex-direction: column; height: 100%; position: relative; border-left: 1px solid #111; border-right: 1px solid #111; }
+        
+        header { 
+            padding: 20px; text-align: center; color: var(--gold); font-weight: 900; font-size: 20px; 
+            letter-spacing: 4px; border-bottom: 1px solid #111; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+        }
+        
+        nav { 
+            display: flex; background: #0a0a0a; border-top: 1px solid #222; 
+            position: absolute; bottom: 0; width: 100%; padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nav-btn { flex: 1; padding: 18px; text-align: center; color: #555; cursor: pointer; font-size: 11px; text-transform: uppercase; transition: 0.3s; }
+        .nav-btn.active { color: var(--gold); font-weight: bold; }
+
+        .content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 100px; scrollbar-width: none; }
+        .content::-webkit-scrollbar { display: none; }
+
+        /* Элементы интерфейса */
+        .promo { background: linear-gradient(45deg, #111, #000); border: 1px solid var(--gold); border-radius: 15px; padding: 25px; margin-bottom: 20px; text-align: center; }
+        .promo h2 { color: var(--gold); margin: 0 0 10px; font-size: 22px; }
+        .promo p { font-size: 14px; color: var(--gold); margin-bottom: 15px; }
+
+        .card { background: var(--card); border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid #222; }
+        .card img { width: 100%; display: block; max-height: 450px; object-fit: cover; background: #0a0a0a; }
+        .card-footer { padding: 12px; display: flex; justify-content: space-between; align-items: center; background: #151515; }
+
+        /* Формы и Кнопки */
+        .auth-form { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; text-align: left; }
+        input { background: #111; border: 1px solid #333; padding: 12px; border-radius: 8px; color: white; outline: none; }
+        input:focus { border-color: var(--gold); }
+
+        .btn-gold { background: var(--gold); color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; text-transform: uppercase; }
+        .btn-gold:active { opacity: 0.8; }
+        
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 1000; display: none; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div id="toast" class="toast"></div>
+    <header>KITTY.AM</header>
+    
+    <div class="content" id="main">
+        <div style="text-align:center; margin-top:50px; color:var(--gold);">Пробуждаем грацию...</div>
+    </div>
+
+    <nav>
+        <div class="nav-btn active" onclick="tab('feed', this)">Лента</div>
+        <div class="nav-btn" onclick="tab('profile', this)">Профиль</div>
+        <div class="nav-btn" onclick="tab('settings', this)">Опции</div>
+    </nav>
+</div>
+
+<script>
+    // КОНФИГУРАЦИЯ SUPABASE
+    const SB_URL = 'https://jfvpauofczfliqjpupfp.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmdnBhdW9mY3pmbGlxanB1cGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NjQ2MTYsImV4cCI6MjA4NDM0MDYxNn0.1CrMZ4YtxOoAjvEgMg8ffQdl7xldmDkKAFLnukaO6nE';
     const db = supabase.createClient(SB_URL, SB_KEY);
 
     let user = null;
 
+    // Запуск приложения
     async function start() {
         const { data } = await db.auth.getSession();
         user = data.session?.user || null;
         tab('feed', document.querySelector('.nav-btn'));
     }
 
-    // Универсальная функция загрузки фото
+    // ЛОГИКА АВТОРИЗАЦИИ (БЕЗ PROMPT)
+    async function login() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('pass').value;
+        if(!email || !password) return msg('Заполните поля');
+        
+        msg('Входим...');
+        const { error } = await db.auth.signInWithPassword({ email, password });
+        if (error) return msg(error.message);
+        location.reload();
+    }
+
+    async function register() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('pass').value;
+        if(!email || !password) return msg('Заполните поля');
+        
+        msg('Регистрация...');
+        const { error } = await db.auth.signUp({ email, password });
+        if (error) return msg(error.message);
+        msg('Проверьте почту или войдите!');
+    }
+
+    // ЗАГРУЗКА ФОТО
     async function uploadPhoto() {
         const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'image/*';
+        fileInput.type = 'file'; fileInput.accept = 'image/*';
         fileInput.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             msg('Загрузка образа...');
-            const fileName = `${Date.now()}_${user.id}.jpg`;
+            const fileName = `cat_${Date.now()}.jpg`;
             
-            // 1. Загрузка в Storage (убедитесь, что бакет 'photos' создан и публичен)
-            const { data: uploadData, error: uploadError } = await db.storage
-                .from('photos')
-                .upload(fileName, file);
-
-            if (uploadError) return msg('Ошибка загрузки: ' + uploadError.message);
+            const { data: upData, error: upErr } = await db.storage.from('photos').upload(fileName, file);
+            if (upErr) return msg('Ошибка хранилища: ' + upErr.message);
 
             const imgUrl = `${SB_URL}/storage/v1/object/public/photos/${fileName}`;
 
-            // 2. Запись в таблицу posts
-            const { error: dbError } = await db.from('posts').insert([
+            const { error: dbErr } = await db.from('posts').insert([
                 { image_url: imgUrl, author: user.email.split('@')[0], user_id: user.id }
             ]);
 
-            if (dbError) return msg('Ошибка БД: ' + dbError.message);
+            if (dbErr) return msg('Ошибка базы: ' + dbErr.message);
             
-            msg('Фото добавлено в прайд!');
+            msg('Готово!');
             tab('feed', document.querySelector('.nav-btn'));
         };
         fileInput.click();
     }
 
-    // Обработка входа/регистрации
-    async function handleAuth(type) {
-        const email = prompt('Email:');
-        const password = prompt('Пароль:');
-        if (!email || !password) return;
-
-        msg('Минутку...');
-        const { data, error } = (type === 'login') 
-            ? await db.auth.signInWithPassword({ email, password })
-            : await db.auth.signUp({ email, password });
-
-        if (error) return msg(error.message);
-        location.reload();
-    }
-
+    // ЭКРАНЫ
     const views = {
         feed: async () => {
             const { data } = await db.from('posts').select('*').order('created_at', { ascending: false });
@@ -66,15 +143,15 @@ const SB_URL = 'https://jfvpauofczfliqjpupfp.supabase.co';
             let html = `
                 <div class="promo">
                     <h2>KITTY.AM</h2>
-                    <p style="font-size:14px; color:var(--gold); font-weight:bold;">Ֆոտոշու՞թ, ապա շատ շուտ</p>
-                    <button class="btn-gold" onclick="msg('Скоро здесь будет календарь!')">ЗАПИСАТЬСЯ</button>
+                    <p>Ֆոտոշու՞թ, ապա շատ շուտ</p>
+                    <button class="btn-gold" onclick="msg('Календарь скоро!')">ЗАПИСАТЬСЯ</button>
                 </div>
             `;
             html += posts.map(p => `
                 <div class="card">
-                    <img src="${p.image_url}" loading="lazy">
+                    <img src="${p.image_url}" onerror="this.src='https://placehold.co/400x500/111/D4AF37?text=Meow'">
                     <div class="card-footer">
-                        <span style="color:var(--gold); font-weight:bold;">🐾 ${p.likes || 0}</span>
+                        <span style="color:var(--gold);">🐾 ${p.likes || 0}</span>
                         <span style="color:#555; font-size:11px;">@${p.author || 'kitty'}</span>
                     </div>
                 </div>
@@ -84,32 +161,37 @@ const SB_URL = 'https://jfvpauofczfliqjpupfp.supabase.co';
         profile: () => {
             if (!user) {
                 return `
-                    <div style="padding:40px 20px; text-align:center;">
-                        <h3 style="color:var(--gold);">Добро пожаловать в прайд</h3>
-                        <p style="color:#888; margin-bottom:20px;">Войдите, чтобы делиться своими образами</p>
-                        <button class="btn-gold" onclick="handleAuth('login')" style="margin-bottom:10px;">ВХОД</button>
-                        <button class="btn-gold" style="background:transparent; border:1px solid var(--gold); color:var(--gold);" onclick="handleAuth('signup')">РЕГИСТРАЦИЯ</button>
+                    <div style="padding:20px; text-align:center;">
+                        <h3 style="color:var(--gold); letter-spacing:1px;">YOUR INNER CAT</h3>
+                        <div class="auth-form">
+                            <input type="email" id="email" placeholder="Email">
+                            <input type="password" id="pass" placeholder="Пароль">
+                            <button class="btn-gold" onclick="login()">ВОЙТИ</button>
+                            <button class="btn-gold" style="background:transparent; color:var(--gold); border:1px solid var(--gold);" onclick="register()">СОЗДАТЬ АККАУНТ</button>
+                        </div>
                     </div>
                 `;
             }
             return `
                 <div style="padding:20px; text-align:center;">
-                    <div style="width:80px; height:80px; background:#222; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; border:1px solid var(--gold); font-size:30px;">🐱</div>
-                    <h3 style="margin-bottom:5px;">${user.email}</h3>
-                    <p style="color:#555; font-size:12px; margin-bottom:20px;">Твой аккаунт активен</p>
+                    <div style="width:80px; height:80px; background:#111; border:1px solid var(--gold); border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; font-size:30px;">🐱</div>
+                    <h3 style="margin:0;">${user.email}</h3>
+                    <p style="color:#555; font-size:12px; margin-bottom:25px;">Участница прайда</p>
                     <button class="btn-gold" onclick="uploadPhoto()">+ ОПУБЛИКОВАТЬ ФОТО</button>
+                    <button class="btn-gold" style="margin-top:10px; background:#222; color:#888;" onclick="db.auth.signOut().then(()=>location.reload())">ВЫЙТИ</button>
                 </div>
             `;
         },
         settings: () => `
             <div style="padding:20px;">
-                <p style="color:#555; font-size:12px; margin-bottom:10px;">Настройки аккаунта</p>
-                <button class="btn-gold" style="background:#222; color:white; margin-bottom:10px;" onclick="msg('Версия 5.1.0')">О ПРИЛОЖЕНИИ</button>
-                <button class="btn-gold" style="background:#441111; color:white;" onclick="db.auth.signOut().then(()=>location.reload())">ВЫЙТИ</button>
+                <h3 style="color:var(--gold);">ОПЦИИ</h3>
+                <button class="btn-gold" style="background:#111; color:white; margin-bottom:10px; border:1px solid #333;" onclick="msg('Версия 5.1 (Active)')">ВЕРСИЯ</button>
+                <button class="btn-gold" style="background:#111; color:white; border:1px solid #333;" onclick="msg('Поддержка: info@kitty.am')">ПОДДЕРЖКА</button>
             </div>
         `
     };
 
+    // Навигация
     async function tab(name, el) {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         if(el) el.classList.add('active');
@@ -125,3 +207,6 @@ const SB_URL = 'https://jfvpauofczfliqjpupfp.supabase.co';
     }
 
     start();
+</script>
+</body>
+</html>
